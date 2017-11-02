@@ -63,12 +63,17 @@ namespace Zweipunkt
     static void ZeichnePunkt(Graphics g, Punkt punkt, Pen pen)
     {
       const double Size = 0.015;
-      g.DrawLine(pen, (float)(punkt.x - Size), (float)(punkt.y - Size), (float)(punkt.x + Size), (float)(punkt.y + Size));
-      g.DrawLine(pen, (float)(punkt.x - Size), (float)(punkt.y + Size), (float)(punkt.x + Size), (float)(punkt.y - Size));
+      try
+      {
+        g.DrawLine(pen, (float)(punkt.x - Size), (float)(punkt.y - Size), (float)(punkt.x + Size), (float)(punkt.y + Size));
+        g.DrawLine(pen, (float)(punkt.x - Size), (float)(punkt.y + Size), (float)(punkt.x + Size), (float)(punkt.y - Size));
+      }
+      catch { }
     }
 
-    readonly Punkt p1 = new Punkt { x = -0.1 };
-    readonly Punkt p2 = new Punkt { x = 0.1 };
+    const double Dist = 0.5;
+    readonly Punkt p1 = new Punkt { x = -Dist / 2 };
+    readonly Punkt p2 = new Punkt { x = Dist / 2 };
     int pTime = Environment.TickCount;
 
     void Rechne()
@@ -87,6 +92,20 @@ namespace Zweipunkt
         if (keys[(byte)Keys.Right] || keys[(byte)Keys.NumPad6]) p2.fx = ManualForce;
         if (keys[(byte)Keys.Up] || keys[(byte)Keys.NumPad8]) p2.fy = ManualForce;
         if (keys[(byte)Keys.Down] || keys[(byte)Keys.NumPad2]) p2.fy = -ManualForce;
+
+        double dx = (p1.x + p1.mx + p1.fx) - (p2.x + p2.mx + p2.fx);
+        double dy = (p1.y + p1.my + p1.fy) - (p2.y + p2.my + p2.fy);
+        double nextDist = Math.Sqrt(dx * dx + dy * dy);
+
+        if (nextDist != Dist)
+        {
+          double addForce = Dist - nextDist; // größer als 0 = stoßen sich ab, kleiner als 0 = ziehen sich an
+          addForce /= 100000.0;
+          p1.fx += addForce * dx;
+          p2.fx -= addForce * dx;
+          p1.fy += addForce * dy;
+          p2.fy -= addForce * dy;
+        }
 
         p1.Update();
         p2.Update();
