@@ -76,22 +76,40 @@ namespace Zweipunkt
     readonly Punkt p2 = new Punkt { x = Dist / 2 };
     int pTime = Environment.TickCount;
 
+    bool autoMode = false;
+
     void Rechne()
     {
-      const double ManualForce = 0.000001;
+      const double MaxForce = 0.000001;
+
+      if (keys[(byte)Keys.Space])
+      {
+        autoMode = !autoMode;
+        keys[(byte)Keys.Space] = false;
+      }
 
       int time = Environment.TickCount;
       while (pTime < time)
       {
-        if (keys[(byte)Keys.A]) p1.fx = -ManualForce;
-        if (keys[(byte)Keys.D]) p1.fx = ManualForce;
-        if (keys[(byte)Keys.W]) p1.fy = ManualForce;
-        if (keys[(byte)Keys.S]) p1.fy = -ManualForce;
+        if (keys[(byte)Keys.A]) p1.fx = -MaxForce;
+        if (keys[(byte)Keys.D]) p1.fx = MaxForce;
+        if (keys[(byte)Keys.W]) p1.fy = MaxForce;
+        if (keys[(byte)Keys.S]) p1.fy = -MaxForce;
 
-        if (keys[(byte)Keys.Left] || keys[(byte)Keys.NumPad4]) p2.fx = -ManualForce;
-        if (keys[(byte)Keys.Right] || keys[(byte)Keys.NumPad6]) p2.fx = ManualForce;
-        if (keys[(byte)Keys.Up] || keys[(byte)Keys.NumPad8]) p2.fy = ManualForce;
-        if (keys[(byte)Keys.Down] || keys[(byte)Keys.NumPad2]) p2.fy = -ManualForce;
+        if (autoMode)
+        {
+          p2.fx = -p2.x * 0.0003 - p2.mx * 0.05;
+          p2.fy = -p2.y * 0.0003 - p2.my * 0.05;
+          p2.fx = Math.Max(Math.Min(p2.fx, MaxForce), -MaxForce);
+          p2.fy = Math.Max(Math.Min(p2.fy, MaxForce), -MaxForce);
+        }
+        else
+        {
+          if (keys[(byte)Keys.Left] || keys[(byte)Keys.NumPad4]) p2.fx = -MaxForce;
+          if (keys[(byte)Keys.Right] || keys[(byte)Keys.NumPad6]) p2.fx = MaxForce;
+          if (keys[(byte)Keys.Up] || keys[(byte)Keys.NumPad8]) p2.fy = MaxForce;
+          if (keys[(byte)Keys.Down] || keys[(byte)Keys.NumPad2]) p2.fy = -MaxForce;
+        }
 
         double dx = (p1.x + p1.mx + p1.fx) - (p2.x + p2.mx + p2.fx);
         double dy = (p1.y + p1.my + p1.fy) - (p2.y + p2.my + p2.fy);
@@ -133,9 +151,16 @@ namespace Zweipunkt
       g.ScaleTransform(scale, -scale);
       g.SmoothingMode = SmoothingMode.HighQuality;
       var pn = new Pen(Color.White) { Width = 1.0f / scale };
+      var pnb = new Pen(Color.Black) { Width = 3.0f / scale };
+
+      ZeichnePunkt(g, p1, pnb);
+      ZeichnePunkt(g, p2, pnb);
 
       ZeichnePunkt(g, p1, pn);
+      if (autoMode) pn.Color = Color.Red;
       ZeichnePunkt(g, p2, pn);
+
+      Text = "Auto-Mode: " + autoMode + " (Space)";
     }
 
     readonly bool[] keys = new bool[256];
