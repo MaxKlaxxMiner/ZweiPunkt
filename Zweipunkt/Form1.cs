@@ -165,7 +165,7 @@ namespace Zweipunkt
       if (autoMode) pn.Color = Color.Red;
       ZeichnePunkt(g, p2, pn);
 
-      Text = "Auto-Mode: " + autoMode + " (Space)";
+      Text = "Auto-Mode: " + autoMode + " (Space) - (" + p1.x.ToString("N2") + ", " + p1.y.ToString("N2") + " - " + p1.mx.ToString("N5") + ", " + p1.my.ToString("N5") + ")";
     }
 
     readonly bool[] keys = new bool[256];
