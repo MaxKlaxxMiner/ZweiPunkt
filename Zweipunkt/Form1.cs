@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+// ReSharper disable MemberCanBePrivate.Local
 #endregion
 
 namespace Zweipunkt
@@ -39,10 +40,22 @@ namespace Zweipunkt
       /// Bewegungsrichtung Y
       /// </summary>
       public double my;
+      /// <summary>
+      /// Kraft in X-Richtung
+      /// </summary>
+      public double fx;
+      /// <summary>
+      /// Kraft in Y-Richtung
+      /// </summary>
+      public double fy;
 
       public void Update()
       {
+        mx += fx;
+        fx = 0.0;
         x += mx;
+        my += fy;
+        fy = 0.0;
         y += my;
       }
     }
@@ -54,29 +67,46 @@ namespace Zweipunkt
       g.DrawLine(pen, (float)(punkt.x - Size), (float)(punkt.y + Size), (float)(punkt.x + Size), (float)(punkt.y - Size));
     }
 
-    readonly Punkt p1 = new Punkt { x = -0.9, mx = 0.0001 };
+    readonly Punkt p1 = new Punkt { x = -0.1 };
     readonly Punkt p2 = new Punkt { x = 0.1 };
     int pTime = Environment.TickCount;
 
-    void Zeichne(Graphics g, int w, int h)
+    void Rechne()
     {
-      int time = Environment.TickCount;
-      const int Count = 16;
-      int tim = time / 8;
-      for (int x = 0; x < Count; x++)
-      {
-        int ff = 0x0080ff;
-        double f = Math.Min((tim + w / Count * x) % w, Math.Abs((tim + w / Count * x) % w - w)) / (double)w * 6.0;
-        if (f < 1.0) ff = (int)((ff & 0xff) * f) | (int)(((ff & 0xff00) >> 8) * f) << 8 | (int)(((ff & 0xff0000) >> 16) * f) << 16;
-        var p = new Pen(Color.FromArgb(ff - 16777216));
-        g.DrawLine(p, (tim + w / Count * x) % w, 0, w - (tim + w / Count * x) % w, h);
-      }
+      const double ManualForce = 0.000001;
 
+      int time = Environment.TickCount;
       while (pTime < time)
       {
+        if (keys[(byte)Keys.A]) p1.fx = -ManualForce;
+        if (keys[(byte)Keys.D]) p1.fx = ManualForce;
+        if (keys[(byte)Keys.W]) p1.fy = ManualForce;
+        if (keys[(byte)Keys.S]) p1.fy = -ManualForce;
+
+        if (keys[(byte)Keys.Left] || keys[(byte)Keys.NumPad4]) p2.fx = -ManualForce;
+        if (keys[(byte)Keys.Right] || keys[(byte)Keys.NumPad6]) p2.fx = ManualForce;
+        if (keys[(byte)Keys.Up] || keys[(byte)Keys.NumPad8]) p2.fy = ManualForce;
+        if (keys[(byte)Keys.Down] || keys[(byte)Keys.NumPad2]) p2.fy = -ManualForce;
+
         p1.Update();
         p2.Update();
         pTime++;
+      }
+    }
+
+    void Zeichne(Graphics g, int w, int h)
+    {
+      Rechne();
+
+      int time = pTime / 8;
+      const int Count = 16;
+      for (int x = 0; x < Count; x++)
+      {
+        int ff = 0x0080ff;
+        double f = Math.Min((time + w / Count * x) % w, Math.Abs((time + w / Count * x) % w - w)) / (double)w * 6.0;
+        if (f < 1.0) ff = (int)((ff & 0xff) * f) | (int)(((ff & 0xff00) >> 8) * f) << 8 | (int)(((ff & 0xff0000) >> 16) * f) << 16;
+        var p = new Pen(Color.FromArgb(ff - 16777216));
+        g.DrawLine(p, (time + w / Count * x) % w, 0, w - (time + w / Count * x) % w, h);
       }
 
       float scale = Math.Min(w * 0.5f, h * 0.5f);
@@ -88,6 +118,8 @@ namespace Zweipunkt
       ZeichnePunkt(g, p1, pn);
       ZeichnePunkt(g, p2, pn);
     }
+
+    readonly bool[] keys = new bool[256];
 
     public Form1()
     {
@@ -116,6 +148,12 @@ namespace Zweipunkt
     void Form1_KeyDown(object sender, KeyEventArgs e)
     {
       if (e.KeyCode == Keys.Escape) Close();
+      keys[(byte)e.KeyCode] = true;
+    }
+
+    void Form1_KeyUp(object sender, KeyEventArgs e)
+    {
+      keys[(byte)e.KeyCode] = false;
     }
   }
 }
