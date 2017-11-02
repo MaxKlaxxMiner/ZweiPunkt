@@ -19,64 +19,12 @@ namespace Zweipunkt
 {
   public sealed partial class Form1 : Form
   {
-    /// <summary>
-    /// Punkt-Struktur
-    /// </summary>
-    sealed class Punkt
-    {
-      /// <summary>
-      /// aktuelle X-Position
-      /// </summary>
-      public double x;
-      /// <summary>
-      /// aktuelle Y-Position
-      /// </summary>
-      public double y;
-      /// <summary>
-      /// Bewegungsrichtung X
-      /// </summary>
-      public double mx;
-      /// <summary>
-      /// Bewegungsrichtung Y
-      /// </summary>
-      public double my;
-      /// <summary>
-      /// Kraft in X-Richtung
-      /// </summary>
-      public double fx;
-      /// <summary>
-      /// Kraft in Y-Richtung
-      /// </summary>
-      public double fy;
-
-      public void Update()
-      {
-        mx += fx;
-        fx = 0.0;
-        x += mx;
-        my += fy;
-        fy = 0.0;
-        y += my;
-      }
-    }
-
-    static void ZeichnePunkt(Graphics g, Punkt punkt, Pen pen)
-    {
-      const double Size = 0.015;
-      try
-      {
-        g.DrawLine(pen, (float)(punkt.x - Size), (float)(punkt.y - Size), (float)(punkt.x + Size), (float)(punkt.y + Size));
-        g.DrawLine(pen, (float)(punkt.x - Size), (float)(punkt.y + Size), (float)(punkt.x + Size), (float)(punkt.y - Size));
-      }
-      catch { }
-    }
-
     const double Dist = 0.5;
     readonly Punkt p1 = new Punkt { x = -Dist / 2 };
     readonly Punkt p2 = new Punkt { x = Dist / 2 };
     int pTime = Environment.TickCount;
 
-    bool autoMode = false;
+    bool autoMode = true;
 
     void Rechne()
     {
@@ -98,15 +46,99 @@ namespace Zweipunkt
 
         if (autoMode)
         {
-          p2.fx = -p2.x * 0.0003 - p2.mx * 0.1;
-          p2.fy = -p2.y * 0.0003 - p2.my * 0.1;
-          if (Math.Sqrt(p1.mx * p1.mx + p1.my * p1.my) > 0.001)
+          if (Math.Sqrt(p2.x * p2.x + p2.my * p2.my) > 0.1)
           {
-            p2.fx -= p1.mx * 0.03;
-            p2.fy -= p1.my * 0.03;
+            var tmp1 = new Punkt(p1);
+            var tmp2 = new Punkt(p2);
+            if (p2.x > 0.0)
+            {
+              if (tmp2.mx > 0.0)
+              {
+                p2.fx = -MaxForce;
+              }
+              else
+              {
+                while (tmp1.mx * 0.5 + tmp2.mx < 0.0)
+                {
+                  tmp1.fx = p1.fx * 0.8; tmp1.fy = p1.fy * 0.8;
+                  tmp2.fx = MaxForce;
+                  Punkt.MixFixDist(tmp1, tmp2, Dist);
+                  tmp1.Update(); tmp2.Update();
+                }
+                p2.fx = tmp2.x > 0.0 ? -MaxForce : MaxForce;
+              }
+            }
+            else
+            {
+              if (tmp2.mx < 0.0)
+              {
+                p2.fx = MaxForce;
+              }
+              else
+              {
+                while (tmp1.mx * 0.5 + tmp2.mx > 0.0)
+                {
+                  tmp1.fx = p1.fx * 0.8; tmp1.fy = p1.fy * 0.8;
+                  tmp2.fx = -MaxForce;
+                  Punkt.MixFixDist(tmp1, tmp2, Dist);
+                  tmp1.Update(); tmp2.Update();
+                }
+                p2.fx = tmp2.x < 0.0 ? MaxForce : -MaxForce;
+              }
+            }
+
+            tmp1 = new Punkt(p1);
+            tmp2 = new Punkt(p2);
+            if (p2.y > 0.0)
+            {
+              if (tmp2.my > 0.0)
+              {
+                p2.fy = -MaxForce;
+              }
+              else
+              {
+                while (tmp1.my * 0.5 + tmp2.my < 0.0)
+                {
+                  tmp1.fx = p1.fx * 0.8; tmp1.fy = p1.fy * 0.8;
+                  tmp2.fy = MaxForce;
+                  Punkt.MixFixDist(tmp1, tmp2, Dist);
+                  tmp1.Update(); tmp2.Update();
+                }
+                p2.fy = tmp2.y > 0.0 ? -MaxForce : MaxForce;
+              }
+            }
+            else
+            {
+              if (tmp2.my < 0.0)
+              {
+                p2.fy = MaxForce;
+              }
+              else
+              {
+                while (tmp1.my * 0.5 + tmp2.my > 0.0)
+                {
+                  tmp1.fx = p1.fx * 0.8; tmp1.fy = p1.fy * 0.8;
+                  tmp2.fy = -MaxForce;
+                  Punkt.MixFixDist(tmp1, tmp2, Dist);
+                  tmp1.Update(); tmp2.Update();
+                }
+                p2.fy = tmp2.y < 0.0 ? MaxForce : -MaxForce;
+              }
+            }
           }
-          p2.fx = Math.Max(Math.Min(p2.fx, MaxForce), -MaxForce);
-          p2.fy = Math.Max(Math.Min(p2.fy, MaxForce), -MaxForce);
+          else
+          {
+            if (Math.Abs(p1.mx) > 0.0005 || Math.Abs(p1.my) > 0.0005)
+            {
+              p2.fx = -p2.x * 0.0003 - (p1.mx * 0.8 + p2.mx) * 0.1;
+              p2.fy = -p2.y * 0.0003 - (p1.my * 0.8 + p2.my) * 0.1;
+            }
+            else
+            {
+              p2.fx = -p2.x * 0.0003 - p2.mx * 0.1;
+              p2.fy = -p2.y * 0.0003 - p2.my * 0.1;
+            }
+          }
         }
         else
         {
@@ -116,24 +148,28 @@ namespace Zweipunkt
           if (keys[(byte)Keys.Down] || keys[(byte)Keys.NumPad2]) p2.fy = -MaxForce;
         }
 
-        double dx = (p1.x + p1.mx + p1.fx) - (p2.x + p2.mx + p2.fx);
-        double dy = (p1.y + p1.my + p1.fy) - (p2.y + p2.my + p2.fy);
-        double nextDist = Math.Sqrt(dx * dx + dy * dy);
 
-        if (nextDist != Dist)
-        {
-          double addForce = Dist - nextDist; // größer als 0 = stoßen sich ab, kleiner als 0 = ziehen sich an
-          addForce /= 100000.0;
-          p1.fx += addForce * dx;
-          p2.fx -= addForce * dx;
-          p1.fy += addForce * dy;
-          p2.fy -= addForce * dy;
-        }
+        p2.fx = Math.Max(Math.Min(p2.fx, MaxForce), -MaxForce);
+        p2.fy = Math.Max(Math.Min(p2.fy, MaxForce), -MaxForce);
+
+        Punkt.MixFixDist(p1, p2, Dist);
 
         p1.Update();
         p2.Update();
         pTime++;
       }
+    }
+
+    #region # // --- Zeichne ---
+    static void ZeichnePunkt(Graphics g, Punkt punkt, Pen pen)
+    {
+      const double Size = 0.015;
+      try
+      {
+        g.DrawLine(pen, (float)(punkt.x - Size), (float)(punkt.y - Size), (float)(punkt.x + Size), (float)(punkt.y + Size));
+        g.DrawLine(pen, (float)(punkt.x - Size), (float)(punkt.y + Size), (float)(punkt.x + Size), (float)(punkt.y - Size));
+      }
+      catch { }
     }
 
     void Zeichne(Graphics g, int w, int h)
@@ -167,7 +203,9 @@ namespace Zweipunkt
 
       Text = "Auto-Mode: " + autoMode + " (Space) - (" + p1.x.ToString("N2") + ", " + p1.y.ToString("N2") + " - " + p1.mx.ToString("N5") + ", " + p1.my.ToString("N5") + ")";
     }
+    #endregion
 
+    #region # // --- allgemeines ---
     readonly bool[] keys = new bool[256];
 
     public Form1()
@@ -204,5 +242,6 @@ namespace Zweipunkt
     {
       keys[(byte)e.KeyCode] = false;
     }
+    #endregion
   }
 }
