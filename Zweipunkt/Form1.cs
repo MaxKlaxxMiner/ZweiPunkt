@@ -98,8 +98,13 @@ namespace Zweipunkt
 
         if (autoMode)
         {
-          p2.fx = -p2.x * 0.0003 - p2.mx * 0.05;
-          p2.fy = -p2.y * 0.0003 - p2.my * 0.05;
+          p2.fx = -p2.x * 0.0003 - p2.mx * 0.1;
+          p2.fy = -p2.y * 0.0003 - p2.my * 0.1;
+          if (Math.Sqrt(p1.mx * p1.mx + p1.my * p1.my) > 0.001)
+          {
+            p2.fx -= p1.mx * 0.03;
+            p2.fy -= p1.my * 0.03;
+          }
           p2.fx = Math.Max(Math.Min(p2.fx, MaxForce), -MaxForce);
           p2.fy = Math.Max(Math.Min(p2.fy, MaxForce), -MaxForce);
         }
