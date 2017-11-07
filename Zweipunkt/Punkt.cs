@@ -5,7 +5,7 @@ namespace Zweipunkt
   /// <summary>
   /// Punkt-Struktur
   /// </summary>
-  sealed class Punkt
+  public sealed class Punkt
   {
     /// <summary>
     /// aktuelle X-Position
@@ -58,13 +58,23 @@ namespace Zweipunkt
     }
 
     /// <summary>
+    /// mischt die beiden Punkte einer Verbindung
+    /// </summary>
+    /// <param name="verbindung">Verbindung, welche gemischt werden soll</param>
+    /// <param name="elastic">Elatischer Wert (1 = fix, größer als 1 = Gummiband-Effekt)</param>
+    public static void MixFixDist(Verbindung verbindung, double elastic = 1.0)
+    {
+      MixFixDist(verbindung.p1, verbindung.p2, verbindung.dist, elastic);
+    }
+
+    /// <summary>
     /// mischt zwei Punkte
     /// </summary>
     /// <param name="punkt1">erster Punkt</param>
     /// <param name="punkt2">zweiter Punkt</param>
     /// <param name="dist">gewünschte Ziel-Entfernung</param>
     /// <param name="elastic">Elatischer Wert (1 = fix, größer als 1 = Gummiband-Effekt)</param>
-    public static void MixFixDist(Punkt punkt1, Punkt punkt2, double dist, double elastic = 100000.0)
+    public static void MixFixDist(Punkt punkt1, Punkt punkt2, double dist, double elastic = 1.0)
     {
       double dx = (punkt1.x + punkt1.mx + punkt1.fx) - (punkt2.x + punkt2.mx + punkt2.fx);
       double dy = (punkt1.y + punkt1.my + punkt1.fy) - (punkt2.y + punkt2.my + punkt2.fy);
@@ -77,6 +87,11 @@ namespace Zweipunkt
       punkt2.fx -= dx;
       punkt1.fy += dy;
       punkt2.fy -= dy;
+    }
+
+    public override string ToString()
+    {
+      return (new { x, y, mx, my, fx, fy }).ToString();
     }
   }
 }
