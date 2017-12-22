@@ -19,33 +19,56 @@ namespace Zweipunkt
 {
   public sealed partial class Form1 : Form
   {
+    /// <summary>
+    /// Start-Entfernung der beiden Spieler (1.0 = Bildschirmhöhe)
+    /// </summary>
     const double Dist = 0.5;
+
+    /// <summary>
+    /// Position des ersten Spielers (links)
+    /// </summary>
     readonly Punkt p1 = new Punkt { x = -Dist / 2 };
+    /// <summary>
+    /// Position des zweiten Spielers (rechts)
+    /// </summary>
     readonly Punkt p2 = new Punkt { x = Dist / 2 };
+
+    /// <summary>
+    /// Zeitpunkt, bis wohin die Berechnungen durchgeführt wurden 
+    /// </summary>
     int pTime = Environment.TickCount;
 
-    bool autoMode = true;
+    /// <summary>
+    /// gibt an, ob die automatische Steuerung für Spieler 2 (rechts) aktiv ist
+    /// </summary>
+    bool autoMode;
 
+    /// <summary>
+    /// berechnet das gesamte Spielfeld
+    /// </summary>
     void Rechne()
     {
-      const double MaxForce = 0.000001;
+      const double MaxForce = 0.000001; // Beschleunigung der Spieler (Default: 0.000001)
 
-      if (keys[(byte)Keys.Space])
+      if (keys[(byte)Keys.Space]) // Leertaste aktiviert oder deaktiviert den Automatik-Spieler
       {
         autoMode = !autoMode;
         keys[(byte)Keys.Space] = false;
       }
 
-      int time = Environment.TickCount;
-      while (pTime < time)
+      int time = Environment.TickCount; // aktuellen Zeitpunkt abfragen 
+      while (pTime < time) // Tick-Schleife (arbeitet solange, bis die Berechnungen den aktuellen Zeitpunkt erreicht haben)
       {
+        // --- Player 1 (links) ---
         if (keys[(byte)Keys.A]) p1.fx = -MaxForce;
         if (keys[(byte)Keys.D]) p1.fx = MaxForce;
         if (keys[(byte)Keys.W]) p1.fy = MaxForce;
         if (keys[(byte)Keys.S]) p1.fy = -MaxForce;
 
+        // --- Player 2 (rechts) ---
         if (autoMode)
         {
+          #region # // --- automatische Steuerung ---
           if (Math.Sqrt(p2.x * p2.x + p2.my * p2.my) > 0.1)
           {
             var tmp1 = new Punkt(p1);
@@ -139,16 +162,18 @@ namespace Zweipunkt
               p2.fy = -p2.y * 0.0003 - p2.my * 0.1;
             }
           }
+          #endregion
         }
         else
         {
+          // --- manuelle Steuerung ---
           if (keys[(byte)Keys.Left] || keys[(byte)Keys.NumPad4]) p2.fx = -MaxForce;
           if (keys[(byte)Keys.Right] || keys[(byte)Keys.NumPad6]) p2.fx = MaxForce;
           if (keys[(byte)Keys.Up] || keys[(byte)Keys.NumPad8]) p2.fy = MaxForce;
           if (keys[(byte)Keys.Down] || keys[(byte)Keys.NumPad2]) p2.fy = -MaxForce;
         }
 
-
+        // --- Bewegung der Punkte berechnen ---
         p2.fx = Math.Max(Math.Min(p2.fx, MaxForce), -MaxForce);
         p2.fy = Math.Max(Math.Min(p2.fy, MaxForce), -MaxForce);
 
@@ -161,6 +186,12 @@ namespace Zweipunkt
     }
 
     #region # // --- Zeichne ---
+    /// <summary>
+    /// zeichnet einen einzelnen Spieler-Punkt (ein X)
+    /// </summary>
+    /// <param name="g">Graphics-Objekt, welches zum zeichnen verwendet werden soll</param>
+    /// <param name="punkt">Punkt, welcher gezeichnet werden soll</param>
+    /// <param name="pen">Stift zum zeichnen</param>
     static void ZeichnePunkt(Graphics g, Punkt punkt, Pen pen)
     {
       const double Size = 0.015;
@@ -172,10 +203,14 @@ namespace Zweipunkt
       catch { }
     }
 
+    /// <summary>
+    /// zeichnet das gesamte Spielfeld
+    /// </summary>
+    /// <param name="g">Graphics-Objekt, welches zum zeichnen verwendet werden soll</param>
+    /// <param name="w">Breite des Bildes in Pixeln</param>
+    /// <param name="h">Höhe des Bildes in Pixeln</param>
     void Zeichne(Graphics g, int w, int h)
     {
-      Rechne();
-
       int time = pTime / 8;
       const int Count = 16;
       for (int x = 0; x < Count; x++)
@@ -206,13 +241,22 @@ namespace Zweipunkt
     #endregion
 
     #region # // --- allgemeines ---
+    /// <summary>
+    /// merkt sich die aktuell gedrückten Tasten
+    /// </summary>
     readonly bool[] keys = new bool[256];
 
+    /// <summary>
+    /// Konstruktor
+    /// </summary>
     public Form1()
     {
       InitializeComponent();
     }
 
+    /// <summary>
+    /// Hintergrundbild, welches das aktuelle Spielfeld zeigt
+    /// </summary>
     Bitmap bild = new Bitmap(10, 10, PixelFormat.Format32bppRgb);
 
     void timer1_Tick(object sender, EventArgs e)
@@ -224,6 +268,8 @@ namespace Zweipunkt
         bild = new Bitmap(w, h, PixelFormat.Format32bppRgb);
         pictureBox1.Image = bild;
       }
+
+      Rechne();
 
       var g = Graphics.FromImage(bild);
       g.Clear(Color.Black);
